@@ -1,6 +1,6 @@
 [package]
 name = "focus-md"
-version = "1.4.0"
+version = "1.4.1"
 description = "A private, local-first Markdown editor"
 authors = ["Ronald Rosales"]
 edition = "2021"

@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<meta name="version" content="1.4">
+<meta name="version" content="1.4.1">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Focus.MD</title>
 <!-- Favicon, embedded so the single file keeps its icon: PNG for Safari, SVG for everyone else -->
@@ -140,6 +140,8 @@ svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-line
 .tb-icon:hover{background:var(--surface2);color:var(--t1)}
 .tb-icon:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tb-icon svg{width:16px;height:16px;stroke-width:1.9}
+/* Sidebar toggle: filled Material "left panel" icons, drawn on a 24px grid */
+.tb-icon svg.sb-icon{width:20px;height:20px;fill:currentColor;stroke:none}
 .tb-icon:disabled{opacity:.35;pointer-events:none}
 
 /* ─────────────────────────────────────────
@@ -543,8 +545,8 @@ dialog::backdrop{background:rgba(0,0,0,.4);backdrop-filter:blur(3px)}
       <!-- Pane toolbar -->
       <div class="pane-toolbar">
         <button id="btnSbToggle" class="tb-icon" aria-label="Collapse history" aria-expanded="true" aria-controls="sidebar">
-          <svg id="icon-collapse" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="2" stroke-width="1.8"/><path d="M8 2v16M5 8l-2 4 2 4" stroke-width="1.8"/></svg>
-          <svg id="icon-expand" viewBox="0 0 20 20" style="display:none"><rect x="2" y="2" width="16" height="16" rx="2" stroke-width="1.8"/><path d="M8 2v16M11 8l2 4-2 4" stroke-width="1.8"/></svg>
+          <svg id="icon-collapse" class="sb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5,14.8V9.2q0-0.35-0.3-0.47T15.65,8.85L13.2,11.3q-0.3,0.3-0.3,0.7t0.3,0.7l2.45,2.45q0.25,0.25 0.55,0.13t0.3-0.48ZM5,21q-0.83,0-1.41-0.59T3,19V5Q3,4.17 3.59,3.59T5,3H19q0.83,0 1.41,0.59T21,5V19q0,0.82-0.59,1.41T19,21H5Zm3-2V5H5V19H8Zm2,0h9V5H10V19ZM8,19H5H8Z"/></svg>
+          <svg id="icon-expand" class="sb-icon" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M12.5,9.2v5.6q0,0.35 0.3,0.48t0.55-0.13L15.8,12.7q0.3-0.3 0.3-0.7t-0.3-0.7L13.35,8.85Q13.1,8.6 12.8,8.73T12.5,9.2ZM5,21q-0.83,0-1.41-0.59T3,19V5Q3,4.17 3.59,3.59T5,3H19q0.83,0 1.41,0.59T21,5V19q0,0.82-0.59,1.41T19,21H5Zm3-2V5H5V19H8Zm2,0h9V5H10V19ZM8,19H5H8Z"/></svg>
         </button>
 
         <div class="tb-sep"></div>
@@ -705,7 +707,7 @@ dialog::backdrop{background:rgba(0,0,0,.4);backdrop-filter:blur(3px)}
 <div id="kebabMenu" class="kebab-menu" role="menu" hidden>
   <button class="kebab-item" id="kbDownload" role="menuitem">
     <svg viewBox="0 0 16 16"><path d="M8 2v8m0 0L5.5 8M8 10l2.5-2M3 13v1h10v-1" stroke-width="1.8"/></svg>
-    Download
+    Save as…
   </button>
   <button class="kebab-item kebab-danger" id="kbDelete" role="menuitem">
     <svg viewBox="0 0 16 16"><path d="M2 4h12M5 4V3h6v1m-7 0 .5 9h7L12 4M6.5 7v4m3-4v4" stroke-width="1.8"/></svg>
@@ -2358,6 +2360,29 @@ function downloadFile(title, content) {
   // Safari and Firefox need the link to stay valid until the download has started.
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
+// Save as… from the History menu: lets the person pick the name and folder where the
+// browser supports it (Chrome, Edge), and downloads the file everywhere else.
+async function saveCopy(title, content) {
+  if (!window.showSaveFilePicker) {
+    downloadFile(title, content);
+    toast(`Downloaded: ${title}`, 'ok');
+    return;
+  }
+  const name = (title.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').trim() || 'Untitled');
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: /\.md$/i.test(name) ? name : name + '.md',
+      types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md', '.markdown'] } }],
+    });
+    const w = await handle.createWritable();
+    await w.write(content);
+    await w.close();
+    toast(`Saved: ${handle.name}`, 'ok');
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    toast("Couldn't save the file. Try again.", 'err');
+  }
+}
 document.getElementById('btnExport').addEventListener('click', exportDoc);
 
 // ═══════════════════════════════════════
@@ -2485,8 +2510,8 @@ document.addEventListener('click', e => { if (!kebabMenu.hidden && !kebabMenu.co
 
 document.getElementById('kbDownload').addEventListener('click', () => {
   const doc = History.get(kebabId);
-  if (doc) { downloadFile(doc.title, doc.content); toast(`Downloaded: ${doc.title}`, 'ok'); }
   closeKebab();
+  if (doc) saveCopy(doc.title, doc.content);
 });
 document.getElementById('kbDelete').addEventListener('click', () => {
   deleteId = kebabId; closeKebab();

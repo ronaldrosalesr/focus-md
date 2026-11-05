@@ -1,7 +1,7 @@
 {
   "name": "focus-md-desktop",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "scripts": {
     "web": "python3 build.py",
     "dev": "python3 build.py && tauri dev",

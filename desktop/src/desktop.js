@@ -213,6 +213,9 @@
       .catch(failed);
   };
 
+  // Save as… in the History menu uses the same native dialog.
+  saveCopy = (title, content) => downloadFile(title, content);
+
   // The Open button and shortcut both click the hidden file input.
   document.getElementById('fileInput').click = pick;
 
