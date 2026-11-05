@@ -1,0 +1,14 @@
+{
+  "name": "focus-md-desktop",
+  "private": true,
+  "version": "1.4.0",
+  "scripts": {
+    "web": "python3 build.py",
+    "dev": "python3 build.py && tauri dev",
+    "build": "python3 build.py && tauri build",
+    "icons": "tauri icon src/app-icon.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4"
+  }
+}
